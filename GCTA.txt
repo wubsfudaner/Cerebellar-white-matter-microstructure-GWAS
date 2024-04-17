@@ -1,0 +1,41 @@
+# QC
+for i in {1..22};
+do 
+plink \
+--bfile ukb_imp_chr${i}_v3_img \
+--geno 0.05  \
+--mind 0.05 \
+--maf 0.01 \
+--hwe 1e-6 \
+--keep pheno_eid.txt \
+--remove paichu_id.txt \
+--make-bed \
+--out /gcta/ukb_imp_chr${i}_gcta \
+;done
+
+# Partition the GRM into 10 parts
+for i in {1..10};
+do 
+gcta64 \
+--mbfile /gcta/gcta_bmerge_list.txt \
+--make-grm-part 10 ${i} \
+--thread-num 10 \
+--out /gcta/ukb_imp_grm \
+;done
+
+# Merge all the parts together
+cat ukb_imp_grm.part_10_*.grm.id > ukb_imp_grm.grm.id
+cat ukb_imp_grm.part_10_*.grm.bin > ukb_imp_grm.grm.bin
+cat ukb_imp_grm.part_10_*.grm.N.bin > ukb_imp_grm.grm.N.bin
+
+###calculate h2
+#for each phenotype
+gcta64 \
+--grm ukb_imp_grm \
+--pheno cere_dti_hebin_nonoutlier_scaled.txt \
+--mpheno 6 \
+--reml \
+--qcovar ukb_gcta_cov_q.txt \
+--covar ukb_gcta_cov_d.txt \
+--out /gcta/UKB_S_MD_h2 \
+--thread-num 10
